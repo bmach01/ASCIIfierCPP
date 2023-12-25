@@ -2,6 +2,7 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 #include <Math.h>
 #include <sstream>
 
@@ -31,7 +32,11 @@ struct tagBITMAPINFOHEADER {
     DWORD biClrImportant;
 };
 
-constexpr char ASCII_CHARS[] = "@%#*+=-:. ";
+// constexpr char ASCII_CHARS[] = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
+
+
+// constexpr char ASCII_CHARS[] = "$@B%8&WM#*";
+constexpr char ASCII_CHARS[] = "@&%QWNM0gB$#DR8mHXKAUbGOpV4d9h6PkqwSE2]ayjxY5Zoen[ult13If}C{iF|(7J)vTLs?z/*cr!+<>;=^,_:'-.";
 
 struct Pixel {
     uint8_t red;
@@ -39,11 +44,16 @@ struct Pixel {
     uint8_t blue;
 
     uint8_t getIntensity() {
-        return (red + green + blue) / 3;
+       //return (red + green + blue) / 3;
+       return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+    }
+
+    void hello() {
+        std::cout << "R:" << (int)red << " G:" << (int)green << " B:" << (int)blue << "\n";
     }
 
     char getASCIIchar() {
-        return ASCII_CHARS[getIntensity() * 9 / 255];
+        return ASCII_CHARS[getIntensity() * 89 / 255];
     }
 
     Pixel() {};
@@ -54,7 +64,8 @@ class Bitmap {
     private:
         tagBITMAPFILEHEADER fileHeader;
         tagBITMAPINFOHEADER infoHeader;
-        DWORD stride;
+        DWORD rowSize;
+        DWORD pixelArraySize;
         Pixel *pixelArray;
 
         bool readHeaders(std::ifstream &file);
