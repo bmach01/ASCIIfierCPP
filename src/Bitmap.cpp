@@ -4,14 +4,12 @@ Bitmap::Bitmap(std::string filename) {
 
     std::ifstream file(filename);
     if (!readHeaders(file)) {
-        std::cerr << "Failed to read the file.\n";
         file.close();
         return;
     }
     readImage(file);
 
     file.close();
-
 }
 
 bool Bitmap::readHeaders(std::ifstream &file) {
@@ -23,13 +21,10 @@ bool Bitmap::readHeaders(std::ifstream &file) {
     file.read((char*)&fileHeader.bfReserved1, sizeof(WORD));
     file.read((char*)&fileHeader.bfOffBits, sizeof(DWORD));
 
-    // std::cout << "bfType: " << fileHeader.bfType << std::endl;
-    // std::cout << "bfSize: " << fileHeader.bfSize << std::endl;
-    // std::cout << "bfReserved1: " << fileHeader.bfReserved1 << std::endl;
-    // std::cout << "bfReserved2: " << fileHeader.bfReserved2 << std::endl;
-    // std::cout << "bfOffBits: " << fileHeader.bfOffBits << std::endl;
-
-    if (fileHeader.bfType != 0x4D42) return false;
+    if (fileHeader.bfType != 0x4D42) {
+        std::cerr << "File is not a BMP.\n";
+        return false;
+    };
 
     file.read((char*)&infoHeader.biSize, sizeof(DWORD));
     file.read((char*)&infoHeader.biWidth, sizeof(LONG));
@@ -47,23 +42,15 @@ bool Bitmap::readHeaders(std::ifstream &file) {
     infoHeader.biSizeImage = (abs(infoHeader.biHeight) * rowSize); // IN PIXEL
     pixelArraySize = infoHeader.biSizeImage / 3;
 
-    // std::cout << "BITMAPINFOHEADER Members:\n";
-    // std::cout << "biSize: " << infoHeader.biSize << "\n";
-    // std::cout << "biWidth: " << infoHeader.biWidth << "\n";
-    // std::cout << "biHeight: " << infoHeader.biHeight << "\n";
-    // std::cout << "biPlanes: " << infoHeader.biPlanes << "\n";
-    // std::cout << "biBitCount: " << infoHeader.biBitCount << "\n";
-    // std::cout << "biCompression: " << infoHeader.biCompression << "\n";
-    // std::cout << "rowSize: " << rowSize << "\n";
-    // std::cout << "biSizeImage: " << infoHeader.biSizeImage << "\n";
-    // std::cout << "biXPelsPerMeter: " << infoHeader.biXPelsPerMeter << "\n";
-    // std::cout << "biYPelsPerMeter: " << infoHeader.biYPelsPerMeter << "\n";
-    // std::cout << "biClrUsed: " << infoHeader.biClrUsed << "\n";
-    // std::cout << "biClrImportant: " << infoHeader.biClrImportant << "\n";
+    if (infoHeader.biBitCount != 24) {
+        std::cerr << "This program supports convertion of only 24-bit BMP files.\n";
+        return false;
+    }
 
-    if (infoHeader.biPlanes != 1) return false;
-    if (infoHeader.biBitCount != 24) return false;
-    if (infoHeader.biCompression != 0) return false;
+    if (infoHeader.biCompression != 0) {
+        std::cerr << "This program doesn't support compressed BMP files.\n";
+        return false;
+    }
     
     pixelArray = new Pixel[pixelArraySize];
 
@@ -81,7 +68,6 @@ void Bitmap::readImage(std::ifstream &file) {
         return;
     }
 
-    uint8_t r = 0, g = 0, b = 0;
     LONG lim = abs(infoHeader.biHeight);
     char discard[4]{};
 
@@ -100,12 +86,12 @@ void Bitmap::getASCII(std::string filename) {
         return;
     }
 
+    // For uncompressed RGB bitmaps, if biHeight is positive, the bitmap is a bottom-up DIB with the origin at the lower left corner.
+    //  If biHeight is negative, the bitmap is a top-down DIB with the origin at the upper left corner.
+
     DWORD row = infoHeader.biHeight - 1;
     DWORD end = 0;
     DWORD step = -1;
-
-// For uncompressed RGB bitmaps, if biHeight is positive, the bitmap is a bottom-up DIB with the origin at the lower left corner.
-//  If biHeight is negative, the bitmap is a top-down DIB with the origin at the upper left corner.
 
     // bottom-up bitmap
     if (infoHeader.biHeight < 0) {
@@ -117,10 +103,8 @@ void Bitmap::getASCII(std::string filename) {
     for (; row != end - 1; row += step) {
         for (DWORD index = 0; index < infoHeader.biWidth; index++) {
             file << std::string(3, pixelArray[row * infoHeader.biWidth + index].getASCIIchar());
-            // std::cout << std::string(3, pixelArray[row * infoHeader.biWidth + index].getASCIIchar());
         }
         file << "\n";
-        // std::cout << "\n";
     }
 
     std::cout << "Successfully written to file.\n";
