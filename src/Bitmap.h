@@ -32,10 +32,6 @@ struct tagBITMAPINFOHEADER {
     DWORD biClrImportant;
 };
 
-// constexpr char ASCII_CHARS[] = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
-
-
-// constexpr char ASCII_CHARS[] = "$@B%8&WM#*";
 constexpr char ASCII_CHARS[] = "@&%QWNM0gB$#DR8mHXKAUbGOpV4d9h6PkqwSE2]ayjxY5Zoen[ult13If}C{iF|(7J)vTLs?z/*cr!+<>;=^,_:'-.";
 
 struct Pixel {
@@ -44,12 +40,8 @@ struct Pixel {
     uint8_t blue;
 
     uint8_t getIntensity() {
-       //return (red + green + blue) / 3;
-       return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
-    }
-
-    void hello() {
-        std::cout << "R:" << (int)red << " G:" << (int)green << " B:" << (int)blue << "\n";
+    //    return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+        return std::max(red, std::max(green, blue));
     }
 
     char getASCIIchar() {

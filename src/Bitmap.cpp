@@ -4,7 +4,7 @@ Bitmap::Bitmap(std::string filename) {
 
     std::ifstream file(filename);
     if (!readHeaders(file)) {
-        std::cerr << "Something's wrong with the provided BMP file.\n";
+        std::cerr << "Failed to read the file.\n";
         file.close();
         return;
     }
@@ -30,8 +30,6 @@ bool Bitmap::readHeaders(std::ifstream &file) {
     // std::cout << "bfOffBits: " << fileHeader.bfOffBits << std::endl;
 
     if (fileHeader.bfType != 0x4D42) return false;
-    //if (fileHeader.bfReserved1 != 0 || fileHeader.bfReserved2 != 0) return false;
-
 
     file.read((char*)&infoHeader.biSize, sizeof(DWORD));
     file.read((char*)&infoHeader.biWidth, sizeof(LONG));
@@ -67,7 +65,7 @@ bool Bitmap::readHeaders(std::ifstream &file) {
     if (infoHeader.biBitCount != 24) return false;
     if (infoHeader.biCompression != 0) return false;
     
-    pixelArray = new Pixel[pixelArraySize * 100];
+    pixelArray = new Pixel[pixelArraySize];
 
     return true;
 }
@@ -81,19 +79,34 @@ void Bitmap::readImage(std::ifstream &file) {
 void Bitmap::getASCII(std::string filename) {
     std::ofstream file(filename);
 
-    DWORD i =  pixelArraySize - 1;
-    do {
-        file << pixelArray[i].getASCIIchar() << "\u2009";
-        i--;
-        if (i % infoHeader.biWidth == 0) {
-            file << "\n";
-        } 
+    if (!file.is_open()) {
+        std::cerr << "Failed to write to file.\n";
+        return;
+    }
 
-    } while (i > 0);
+    DWORD row = infoHeader.biHeight - 1;
+    DWORD end = 0;
+    DWORD step = -1;
+
+// For uncompressed RGB bitmaps, if biHeight is positive, the bitmap is a bottom-up DIB with the origin at the lower left corner.
+//  If biHeight is negative, the bitmap is a top-down DIB with the origin at the upper left corner.
+
+    // bottom-up bitmap
+    if (infoHeader.biHeight < 0) {
+        row = 0;
+        end = -(infoHeader.biHeight + 1);
+        step = 1;
+    }
+
+    for (; row != end - 1; row += step) {
+        for (DWORD index = 0; index < infoHeader.biWidth; index++) {
+            file << std::string(3, pixelArray[row * infoHeader.biWidth + index].getASCIIchar());
+        }
+        file << "\n";
+    }
 
     std::cout << "Successfully written to file.\n";
     file.close();
-
 }
 
 Bitmap::~Bitmap() {
