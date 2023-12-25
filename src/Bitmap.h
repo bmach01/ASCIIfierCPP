@@ -40,7 +40,6 @@ struct Pixel {
     uint8_t blue;
 
     uint8_t getIntensity() {
-    //    return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
         return std::max(red, std::max(green, blue));
     }
 

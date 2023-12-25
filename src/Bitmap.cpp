@@ -38,8 +38,8 @@ bool Bitmap::readHeaders(std::ifstream &file) {
     file.read((char*)&infoHeader.biClrUsed, sizeof(DWORD));
     file.read((char*)&infoHeader.biClrImportant, sizeof(DWORD));
 
-    rowSize =  ((((infoHeader.biWidth * infoHeader.biBitCount) + 31) & ~31) >> 3); // IN BYTE
-    infoHeader.biSizeImage = (abs(infoHeader.biHeight) * rowSize); // IN PIXEL
+    rowSize =  ((((infoHeader.biWidth * infoHeader.biBitCount) + 31) & ~31) >> 3);
+    infoHeader.biSizeImage = (abs(infoHeader.biHeight) * rowSize);
     pixelArraySize = infoHeader.biSizeImage / 3;
 
     if (infoHeader.biBitCount != 24) {
