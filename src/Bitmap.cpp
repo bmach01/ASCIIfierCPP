@@ -43,8 +43,8 @@ bool Bitmap::readHeaders(std::ifstream &file) {
     file.read((char*)&infoHeader.biClrUsed, sizeof(DWORD));
     file.read((char*)&infoHeader.biClrImportant, sizeof(DWORD));
 
-    rowSize = (infoHeader.biWidth * sizeof(Pixel) + 3) & ~3;
-    infoHeader.biSizeImage = infoHeader.biHeight * rowSize;
+    rowSize =  ((((infoHeader.biWidth * infoHeader.biBitCount) + 31) & ~31) >> 3); // IN BYTE
+    infoHeader.biSizeImage = (abs(infoHeader.biHeight) * rowSize); // IN PIXEL
     pixelArraySize = infoHeader.biSizeImage / 3;
 
     // std::cout << "BITMAPINFOHEADER Members:\n";
@@ -73,7 +73,23 @@ bool Bitmap::readHeaders(std::ifstream &file) {
 
 void Bitmap::readImage(std::ifstream &file) {
     file.seekg(fileHeader.bfOffBits, std::ios::beg);
-    file.read((char*)(pixelArray), infoHeader.biSizeImage);
+
+    int padding = rowSize - (3 * infoHeader.biWidth);
+
+    if (padding <= 0) {
+        file.read((char*)(pixelArray), infoHeader.biSizeImage);
+        return;
+    }
+
+    uint8_t r = 0, g = 0, b = 0;
+    LONG lim = abs(infoHeader.biHeight);
+    char discard[4]{};
+
+    for (LONG i = 0; i < lim; i++) {
+        file.read((char*)(&pixelArray[i * infoHeader.biWidth]), infoHeader.biWidth * 3);
+        // discard padding
+        file.read(discard, padding);
+    }
 }
 
 void Bitmap::getASCII(std::string filename) {
@@ -101,8 +117,10 @@ void Bitmap::getASCII(std::string filename) {
     for (; row != end - 1; row += step) {
         for (DWORD index = 0; index < infoHeader.biWidth; index++) {
             file << std::string(3, pixelArray[row * infoHeader.biWidth + index].getASCIIchar());
+            // std::cout << std::string(3, pixelArray[row * infoHeader.biWidth + index].getASCIIchar());
         }
         file << "\n";
+        // std::cout << "\n";
     }
 
     std::cout << "Successfully written to file.\n";
